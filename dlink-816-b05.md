@@ -17,7 +17,7 @@ Firmware download address: http://www.dlink.com.cn/techsupport/AllPro.aspx
 
 The access path of the vulnerability is: http://ip/goform/dir_setWanWifi. The function dir_setWanWifi(int a1, const char *a2, const char *a3), has a buffer overflow when retrieving the parameters pppoe_usrname and pppoe_psword from the request packet. When the value of the parameter connecttype is "PPPOE", it retrieves the parameters pppoe_usrname and pppoe_psword from the request package, and then decodes them using websDecode64 for base64 decoding. The decoded result is stored in the decode_pppoe_usrname stack, and due to the lack of length restriction, this leads to a stack overflow.
 
-![image-20250922171912019](dlink-816-b05.assets/image-20250922171912019.png)
+![image-20250922171912019](./image-20250922171912019.png)
 
 By requesting this page, an attacker can easily execute denial of service attacks or remote code execution using carefully crafted overflow data.
 
@@ -85,4 +85,5 @@ info = response.text
 li(url)
 print(info)
 ```
+
 
