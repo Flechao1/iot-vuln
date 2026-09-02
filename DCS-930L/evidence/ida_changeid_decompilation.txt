@@ -1,0 +1,84 @@
+=== IDA Pro 9.2 Hex-Rays Decompilation: landap_change_idpassword @ 0x411588 ===
+Binary: lanconfig (MD5: 274aa92531bf44348717c5f7c373c166)
+
+int __fastcall landap_change_idpassword(int a1)
+{
+  unsigned __int16 v1;
+  unsigned __int16 v2;
+  _BYTE v5[64];
+  _BYTE v6[64];
+  char v7[64];
+  char v8[64];
+  int v9;
+  int v10;
+  const char *v11;
+  _BYTE v12[256];
+
+  // Step 1: Decode newid from UDP packet at offset 150 (base64-encoded)
+  memset(v5, 0, sizeof(v5));
+  if ((unsigned int)strlen(a1 + 150) >= 0x40)
+    return 1;
+  v1 = strlen(a1 + 150);
+  v9 = Base64_Decode(a1 + 150, v1, v5);   // decoded newid
+  if (v9 >= 13)                           // LENGTH CHECK: must be < 13 bytes
+    return 1;
+
+  // Step 2: Decode newpassword from UDP packet at offset 214 (base64-encoded)
+  memset(v6, 0, sizeof(v6));
+  if ((unsigned int)strlen(a1 + 214) >= 0x40)
+    return 2;
+  v2 = strlen(a1 + 214);
+  v10 = Base64_Decode(a1 + 214, v2, v6);  // decoded newpassword
+  if (v10 >= 33)                          // LENGTH CHECK: must be < 33 bytes
+    return 2;
+
+  // Step 3: Character filter — INCOMPLETE
+  if (check_id_char(v5))                  // ONLY rejects: chars <33, ':' (58), DEL (127)
+    return 3;                             // ALLOWS: ';' (59), '|' (124), '&' (38), etc.
+  if (check_password_char(v6))
+    return 4;
+
+  // Step 4: Store to nvram
+  v11 = (const char *)nvram_bufget(0, "AdminID");
+  memcpy(v7, v5, v9);
+  memcpy(v8, v6, v10);
+  nvram_bufset(0, "AdminID", v7);
+  nvram_bufset(0, "AdminPassword", v8);
+  memcpy(&sys_adminid, v7, 64);
+  memcpy(&sys_password, v8, 64);
+
+  // Step 5: SINK #1 — sed command with unescaped user input
+  memset(v12, 0, sizeof(v12));
+  sprintf(v12, "sed -e 's/^%s:/%s:/' /etc/passwd > /etc/newpw", v11, v7);  // v7 = attacker newid
+  system(v12);                            // INJECTION POINT 1
+
+  // Step 6: Hardcoded commands (no injection)
+  system("cp /etc/newpw /etc/passwd");
+  system("rm -f /etc/newpw");
+
+  // Step 7: SINK #2 — chpasswd.sh command with unescaped user input
+  memset(v12, 0, sizeof(v12));
+  sprintf(v12, "chpasswd.sh %s %s", v7, v8);  // v7=newid, v8=newpassword — NO ESCAPING!
+  nvram_close(0);
+  system(v12);                            // INJECTION POINT 2 (primary RCE vector)
+
+  return 0;
+}
+
+=== Vulnerability Analysis ===
+
+Root Cause: sprintf() formats user-controlled newid (v7) into a shell command
+string without any shell metacharacter escaping, then passes to system().
+
+Filter Bypass: check_id_char() only rejects characters < 33, ':' (58), and DEL (127).
+This allows ';' (59) to pass through, which shell interprets as a command separator.
+
+Payload: newid = "a;pwd>/tmp/q"
+  → sprintf produces: "chpasswd.sh a;pwd>/tmp/q x"
+  → shell executes:   chpasswd.sh a  |  pwd>/tmp/q  |  x
+  → second command (pwd>/tmp/q) runs as root
+
+Auth Bypass: landap_authentication() passes when sys_password is empty (factory default).
+  Code: if (!v8 || !memcmp(v5, &sys_password, v7)) return 0;
+  When sys_password empty, v7 = strlen(sys_password) = 0,
+  memcmp(anything, anything, 0) always returns 0 → auth passes.
