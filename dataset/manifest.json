@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "description": "Firmware dataset collected for IoT security research.",
+  "items": [
+    {
+      "path": "comfast/CF-N1-S/2.6.0.1/CF-N1-S-V2.6.0.1.bin_extracted_fs_1785897967.7z",
+      "size_bytes": 5953848,
+      "sha256": "c6304b89153cb5c88ba0c0783a143d08ba8ddc24444153058ed21bc4dfdcab60"
+    },
+    {
+      "path": "comfast/CF-WR630AX/2.7.0.2/CF-WR630AX-V2.7.0.2.bin_extracted_fs_1785983095.7z",
+      "size_bytes": 12775023,
+      "sha256": "26db78cb98405631275bcba5378a57ea09afd3be7faf05be988f5145a36e141a"
+    },
+    {
+      "path": "comfast/CF-WR630AX/2.7.0.2/CF-WR630AX-V2.7.0.2.rar",
+      "size_bytes": 17838958,
+      "sha256": "983c8fd60e58ca4179c36a85b7e14ee1cd5364cb4d713b11e716dac0bf136640"
+    },
+    {
+      "path": "dlink/DCS-930L/1.11B1/DCS-930L_RELEASENOTES_1.11B1_EN_US.PDF",
+      "size_bytes": 182804,
+      "sha256": "e6de7114ac31d47f120729c3c9f88b09163cc5625bceda393a99c5fb4b967b66"
+    },
+    {
+      "path": "dlink/DCS-930L/1.11B1/DCS-930L_REVA_FIRMWARE_1.11B1.ZIP",
+      "size_bytes": 3960975,
+      "sha256": "1543429d7bdb20e98b0235912d74b9554391403d45641506dcabed92340b9fcb"
+    },
+    {
+      "path": "dlink/DCS-930L/1.16.04/DCS-930L_REVA_FIRMWARE_1.16.04.ZIP",
+      "size_bytes": 4170716,
+      "sha256": "a79bdbea4cca1b8c49e615bcca95af448b5ef259943f25099890faf7212e6ee8"
+    },
+    {
+      "path": "dlink/DCS-930L/1.16.04/DCS-930L_REVA_RELEASENOTES_1.16.04_EN.PDF",
+      "size_bytes": 416259,
+      "sha256": "7acf33f4635203d3bcab2a44c198958a64bb364255f9970180a0c6338d268eff"
+    },
+    {
+      "path": "dlink/DCS-930L/1.16.04/dcs930l_v1.16.04.bin_extracted_fs_1786073560.7z",
+      "size_bytes": 2479716,
+      "sha256": "07032db1c0402421ed4292526e78bae61fcf370c806ccd9a8fd0667bfd692194"
+    },
+    {
+      "path": "dlink/DCS-940L/1.034/DCS-940L_REVA_FIRMWARE_1.034.ZIP",
+      "size_bytes": 5576602,
+      "sha256": "5e2e88fe4bc38b7c23f5454fb96b0d1eeac1d0fc1f43a12e3cce0b66f9bc0d88"
+    },
+    {
+      "path": "netgear/EAX10/1.0.4.40/EAX10-V1.0.4.40.bin_extracted_fs_1786360133.7z",
+      "size_bytes": 23034681,
+      "sha256": "cec225975de0711902eb916e1137cc8fc1fe40ef1bf078ae1f4c89f9bbb0baba"
+    },
+    {
+      "path": "netgear/EAX10/1.0.4.40/EAX10_V1.0.4.40.zip",
+      "size_bytes": 29347907,
+      "sha256": "0a92dcd4da9cfe3b4fe19d5ac659507b7cafabe78b7b91b9d03ddef400fb93e7"
+    },
+    {
+      "path": "netgear/EAX10/1.0.4.40/EAX10_V1.0.4.40_Release_Notes.HTML",
+      "size_bytes": 865,
+      "sha256": "7d346a3949f14f06aabe5767d96d1437d3571dde84b806e59f13023b7d63bf15"
+    },
+    {
+      "path": "wavlink/NU516U1/2024-04-25/WAVLINK-NU516U1-WO-A-2024-04-25-b516aec-GDBYFM.bin",
+      "size_bytes": 6815748,
+      "sha256": "171b3bf9df7d05b0904120166653b9b90ca158f906315fefb7d152a512370309"
+    },
+    {
+      "path": "wavlink/NU516U1/2024-04-25/WAVLINK-NU516U1-WO-A-2024-04-25-b516aec-GDBYFM.bin_extracted_fs_1787744980.7z",
+      "size_bytes": 5144509,
+      "sha256": "bc72229833819b014c1298d26bcc768b3ccc2396bb3f18911c14ca9bd6904ae8"
+    },
+    {
+      "path": "xiaomi/MiWiFi-RA70/1.0.168/miwifi_ra70_firmware_cc424_1.0.168.bin",
+      "size_bytes": 44696516,
+      "sha256": "43fdbc81e2ec6c90655433629db4b751ccd09164fe53d1d975db82f2fa354497"
+    }
+  ]
+}
