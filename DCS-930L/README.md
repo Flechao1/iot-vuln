@@ -33,6 +33,7 @@ DCS-930L/
 ├── evidence/
 │   ├── v6_strace_original_binary.txt   # V6 strace evidence (original unmodified binary)
 │   ├── v1_strace_patched_binary.txt    # V1 strace evidence
+│   ├── alphapd_patch_details.md         # V1 3-NOP patch documentation (hardware bypass, not security)
 │   ├── ida_changeid_decompilation.txt   # V6 IDA decompilation of landap_change_idpassword
 │   └── ida_v1flow_decompilation.txt     # V1 IDA decompilation of websKernalParameter
 ```
